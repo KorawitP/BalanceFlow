@@ -5,14 +5,14 @@ import { getFirestore } from "firebase/firestore";
 // TODO: Replace the following with your app's Firebase project configuration
 // You can find these values in the Firebase Console after clicking "Register app"
 const firebaseConfig = {
-  apiKey: "AIzaSyBhBRchVcBGI01Pjfh73DMCRxZfMwcz8e8",
-  authDomain: "mmm1-d495f.firebaseapp.com",
-  databaseURL: "https://mmm1-d495f-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "mmm1-d495f",
-  storageBucket: "mmm1-d495f.firebasestorage.app",
-  messagingSenderId: "247050343364",
-  appId: "1:247050343364:web:e43ea6657673c00b5d4a91",
-  measurementId: "G-ZPCLQC869R"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  databaseURL: process.env.EXPO_PUBLIC_FIREBASE_DATABASE_URL,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
