@@ -4,7 +4,7 @@ import { collection, query, onSnapshot, orderBy, doc, deleteDoc } from 'firebase
 import { db, auth } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons'; // Using Expo vector icons
+import { Feather } from '@expo/vector-icons';
 
 // Types
 interface Transaction {
@@ -48,7 +48,7 @@ export default function HomeScreen() {
       setLoading(false);
     }, (error) => {
       console.error("Firestore Error:", error);
-      Alert.alert("Error", "Could not fetch transactions.");
+      Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถดึงข้อมูลรายการได้");
       setLoading(false);
     });
 
@@ -83,12 +83,12 @@ export default function HomeScreen() {
   // Delete Action
   const handleDelete = (id: string) => {
     Alert.alert(
-      "Confirm Delete",
-      "Are you sure you want to delete this transaction?",
+      "ยืนยันการลบ",
+      "คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: "ยกเลิก", style: "cancel" },
         { 
-          text: "Delete", 
+          text: "ลบรายการ", 
           style: "destructive", 
           onPress: async () => {
             try {
@@ -96,7 +96,7 @@ export default function HomeScreen() {
                 await deleteDoc(doc(db, 'users', user.uid, 'transactions', id));
               }
             } catch (err) {
-              Alert.alert("Error", "Failed to delete transaction.");
+              Alert.alert("ผิดพลาด", "ไม่สามารถลบรายการได้");
             }
           }
         }
@@ -106,11 +106,28 @@ export default function HomeScreen() {
 
   const renderItem = ({ item }: { item: Transaction }) => {
     const isIncome = item.type === 'income';
+    
+    // Simple category translation map
+    const categoryMap: {[key: string]: string} = {
+      'Food': 'อาหาร',
+      'Transport': 'เดินทาง',
+      'Shopping': 'ช้อปปิ้ง',
+      'Entertainment': 'บันเทิง',
+      'Bills': 'บิล/ค่าน้ำไฟ',
+      'Health': 'สุขภาพ',
+      'Other': 'อื่นๆ',
+      'Salary': 'เงินเดือน',
+      'Freelance': 'ฟรีแลนซ์',
+      'Gift': 'ของขวัญ',
+      'Investment': 'การลงทุน'
+    };
+    
+    const displayCategory = categoryMap[item.category] || item.category;
+
     return (
       <TouchableOpacity 
         style={styles.card} 
         onLongPress={() => handleDelete(item.id)}
-        // Future: onPress -> Navigate to Edit
       >
         <View style={styles.cardLeft}>
           <View style={[styles.iconBox, { backgroundColor: isIncome ? '#E6F9EF' : '#FFF0F0' }]}>
@@ -123,7 +140,7 @@ export default function HomeScreen() {
           <View>
             <Text style={styles.cardTitle}>{item.title}</Text>
             <View style={styles.cardMeta}>
-              <Text style={styles.cardCategory}>{item.category || 'General'}</Text>
+              <Text style={styles.cardCategory}>{displayCategory}</Text>
               <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
             </View>
           </View>
@@ -149,8 +166,8 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <View>
-            <Text style={styles.greeting}>Start your day,</Text>
-            <Text style={styles.username}>Total Balance</Text>
+            <Text style={styles.greeting}>เริ่มต้นวันใหม่,</Text>
+            <Text style={styles.username}>ยอดเงินคงเหลือ</Text>
           </View>
           <TouchableOpacity onPress={() => auth.signOut()} style={{ padding: 8 }}>
             <Feather name="log-out" size={24} color="#636E72" />
@@ -164,7 +181,7 @@ export default function HomeScreen() {
                <Feather name="arrow-up" size={16} color="#28C76F" />
             </View>
             <View>
-              <Text style={styles.summaryLabel}>Income</Text>
+              <Text style={styles.summaryLabel}>รายรับ</Text>
               <Text style={styles.summaryValue}>฿{formatMoney(income)}</Text>
             </View>
           </View>
@@ -174,7 +191,7 @@ export default function HomeScreen() {
               <Feather name="arrow-down" size={16} color="#FF4D4D" />
             </View>
             <View>
-              <Text style={styles.summaryLabel}>Expense</Text>
+              <Text style={styles.summaryLabel}>รายจ่าย</Text>
               <Text style={styles.summaryValue}>฿{formatMoney(expense)}</Text>
             </View>
           </View>
@@ -184,15 +201,14 @@ export default function HomeScreen() {
       {/* Transactions List */}
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {/* <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity> */}
+          <Text style={styles.sectionTitle}>รายการล่าสุด</Text>
         </View>
 
         {transactions.length === 0 ? (
           <View style={styles.emptyState}>
             <Feather name="list" size={48} color="#E2E8F0" />
-            <Text style={styles.emptyText}>No transactions yet.</Text>
-            <Text style={styles.emptySubText}>Start by adding your income or expense.</Text>
+            <Text style={styles.emptyText}>ยังไม่มีรายการ</Text>
+            <Text style={styles.emptySubText}>เริ่มต้นบันทึกรายรับ-รายจ่ายของคุณได้เลย</Text>
           </View>
         ) : (
           <FlatList
@@ -229,7 +245,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Clean White
+    backgroundColor: '#FFFFFF',
   },
   center: {
     flex: 1,
@@ -245,12 +261,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#636E72',
     marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   username: {
     fontSize: 16,
     fontWeight: '600',
     color: '#2D3436',
     marginBottom: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   totalBalance: {
     fontSize: 36,
@@ -273,10 +291,10 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   incomeBox: {
-    backgroundColor: '#E6F9EF', // Very light green
+    backgroundColor: '#E6F9EF',
   },
   expenseBox: {
-    backgroundColor: '#FFF0F0', // Very light red
+    backgroundColor: '#FFF0F0',
   },
   summaryIconIncome: {
     backgroundColor: '#FFFFFF',
@@ -292,16 +310,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#636E72',
     marginBottom: 2,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   summaryValue: {
     fontSize: 16,
     fontWeight: '600',
     color: '#2D3436',
   },
-  // Content Section
   content: {
     flex: 1,
-    backgroundColor: '#F5F7FA', // Off-White background for list
+    backgroundColor: '#F5F7FA',
     borderTopLeftRadius: 32,
     borderTopRightRadius: 32,
     paddingHorizontal: 24,
@@ -317,15 +335,10 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#2D3436',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
-  seeAll: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  // List Item (Card)
   listContent: {
-    paddingBottom: 100, // Space for FAB
+    paddingBottom: 100,
   },
   card: {
     backgroundColor: '#FFFFFF',
@@ -355,6 +368,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D3436',
     marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   cardMeta: {
     flexDirection: 'row',
@@ -369,6 +383,7 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     borderRadius: 4,
     overflow: 'hidden',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   cardDate: {
     fontSize: 12,
@@ -378,7 +393,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
   },
-  // Empty State
   emptyState: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -389,13 +403,14 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D3436',
     marginTop: 16,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   emptySubText: {
     fontSize: 14,
     color: '#636E72',
     marginTop: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
-  // FAB
   fabContainer: {
     position: 'absolute',
     bottom: 24,
@@ -416,9 +431,9 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   fabIncome: {
-    backgroundColor: '#28C76F', // Success Green
+    backgroundColor: '#28C76F',
   },
   fabExpense: {
-    backgroundColor: '#FF4D4D', // Danger Red
+    backgroundColor: '#FF4D4D',
   },
 });

@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '../../firebaseConfig';
+import { useRouter } from 'expo-router';
 import { setDoc, doc } from 'firebase/firestore';
-import { useRouter, Link } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
   const [email, setEmail] = useState('');
@@ -14,39 +15,37 @@ export default function RegisterScreen() {
 
   const handleRegister = async () => {
     if (!email || !password || !confirmPassword) {
-      Alert.alert('Error', 'Please fill in all fields');
+      Alert.alert('แจ้งเตือน', 'กรุณากรอกข้อมูลให้ครบทุกช่อง');
       return;
     }
 
     if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+      Alert.alert('แจ้งเตือน', 'รหัสผ่านไม่ตรงกัน');
       return;
     }
 
     if (password.length < 6) {
-      Alert.alert('Error', 'Password should be at least 6 characters');
+      Alert.alert('แจ้งเตือน', 'รหัสผ่านต้องมีความยาวอย่างน้อย 6 ตัวอักษร');
       return;
     }
 
     setLoading(true);
     try {
-      // 1. Create User in Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      
-      // 2. Initialize User Data in Firestore (Optional but good practice)
+      // Create user document in Firestore
       await setDoc(doc(db, 'users', userCredential.user.uid), {
         email: email,
         createdAt: new Date(),
         updatedAt: new Date()
       });
-
-      // Auth listener in _layout.tsx will handle redirection
+      // Auth listener handles navigation
     } catch (error: any) {
-      let errorMessage = 'Registration failed';
-      if (error.code === 'auth/email-already-in-use') errorMessage = 'Email is already in use';
-      if (error.code === 'auth/invalid-email') errorMessage = 'Invalid email address';
+      let errorMessage = 'เกิดข้อผิดพลาดในการสมัครสมาชิก';
+      if (error.code === 'auth/email-already-in-use') errorMessage = 'อีเมลนี้ถูกใช้งานแล้ว';
+      else if (error.code === 'auth/invalid-email') errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง';
+      else if (error.code === 'auth/weak-password') errorMessage = 'รหัสผ่านคาดเดาง่ายเกินไป';
       
-      Alert.alert('Registration Error', errorMessage);
+      Alert.alert('สมัครสมาชิกไม่สำเร็จ', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -54,146 +53,147 @@ export default function RegisterScreen() {
 
   return (
     <KeyboardAvoidingView 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'} 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}>
+      <View style={styles.formContainer}>
         <View style={styles.header}>
-          <Text style={styles.title}>Create Account</Text>
-          <Text style={styles.subtitle}>Start tracking your finances</Text>
+            <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+                 <Feather name="arrow-left" size={24} color="#2D3436" />
+            </TouchableOpacity>
+            <View style={{ flex: 1, alignItems: 'center', paddingRight: 40 }}>
+                <Text style={styles.title}>สร้างบัญชีใหม่</Text>
+                <Text style={styles.subtitle}>เริ่มวางแผนการเงินกับเราวันนี้</Text>
+            </View>
         </View>
 
-        <View style={styles.form}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Email</Text>
+        <View style={styles.inputGroup}>
+            <Feather name="mail" size={20} color="#636E72" style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
-              placeholder="hello@example.com"
-              placeholderTextColor="#9CA3AF"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
+            style={styles.input}
+            placeholder="อีเมล"
+            placeholderTextColor="#B0B0B0"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
             />
-          </View>
+        </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Password</Text>
+        <View style={styles.inputGroup}>
+            <Feather name="lock" size={20} color="#636E72" style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
+            style={styles.input}
+            placeholder="รหัสผ่าน (ขั้นต่ำ 6 ตัวอักษร)"
+            placeholderTextColor="#B0B0B0"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
             />
-          </View>
+        </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Confirm Password</Text>
+        <View style={styles.inputGroup}>
+            <Feather name="check-circle" size={20} color="#636E72" style={styles.inputIcon} />
             <TextInput
-              style={styles.input}
-              placeholder="••••••••"
-              placeholderTextColor="#9CA3AF"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-              autoCapitalize="none"
+            style={styles.input}
+            placeholder="ยืนยันรหัสผ่านอีกครั้ง"
+            placeholderTextColor="#B0B0B0"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
             />
-          </View>
+        </View>
 
-          <TouchableOpacity 
+        <TouchableOpacity 
             style={styles.button} 
             onPress={handleRegister}
             disabled={loading}
-          >
+        >
             {loading ? (
-              <ActivityIndicator color="#FFFFFF" />
+                <ActivityIndicator color="#FFF" />
             ) : (
-              <Text style={styles.buttonText}>Sign Up</Text>
+                <Text style={styles.buttonText}>ยืนยันการสมัคร</Text>
             )}
-          </TouchableOpacity>
+        </TouchableOpacity>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account? </Text>
-            <Link href="/auth/login" asChild>
-              <TouchableOpacity>
-                <Text style={styles.linkText}>Sign In</Text>
-              </TouchableOpacity>
-            </Link>
-          </View>
+        <View style={styles.footer}>
+            <Text style={styles.footerText}>มีบัญชีอยู่แล้ว? </Text>
+            <TouchableOpacity onPress={() => router.push('/auth/login')}>
+            <Text style={styles.linkText}>เข้าสู่ระบบ</Text>
+            </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-// Reusing same Minimalist Design Styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#FFFFFF',
-  },
-  content: {
-    flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
+  },
+  formContainer: {
+    paddingHorizontal: 32,
   },
   header: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 40,
   },
+  backButton: {
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: '#F5F7FA',
+  },
   title: {
-    fontSize: 32,
+    fontSize: 24,
     fontWeight: '700',
     color: '#2D3436',
-    marginBottom: 8,
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
+    marginBottom: 4,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#636E72',
-    fontFamily: Platform.OS === 'ios' ? 'System' : 'Roboto',
-  },
-  form: {
-    width: '100%',
+    textAlign: 'center',
   },
   inputGroup: {
-    marginBottom: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#F5F7FA',
+    borderRadius: 16,
+    marginBottom: 16,
+    paddingHorizontal: 16,
+    height: 56,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
   },
-  label: {
-    fontSize: 14,
-    color: '#2D3436',
-    marginBottom: 8,
-    fontWeight: '500',
+  inputIcon: {
+    marginRight: 12,
   },
   input: {
-    backgroundColor: '#F5F7FA',
-    borderRadius: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 14,
+    flex: 1,
     fontSize: 16,
     color: '#2D3436',
-    borderWidth: 1,
-    borderColor: 'transparent',
   },
   button: {
-    backgroundColor: '#007AFF', // Primary Blue
-    borderRadius: 12,
-    paddingVertical: 16,
+    backgroundColor: '#28C76F', // Green for registration
+    borderRadius: 16,
+    height: 56,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 12,
-    shadowColor: '#007AFF',
+    marginTop: 24,
+    shadowColor: '#28C76F',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 8,
-    elevation: 4,
+    elevation: 5,
   },
   buttonText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '700',
   },
   footer: {
     flexDirection: 'row',
@@ -201,12 +201,12 @@ const styles = StyleSheet.create({
     marginTop: 24,
   },
   footerText: {
-    color: '#636E72',
     fontSize: 14,
+    color: '#636E72',
   },
   linkText: {
-    color: '#007AFF',
     fontSize: 14,
+    color: '#28C76F',
     fontWeight: '600',
   },
 });

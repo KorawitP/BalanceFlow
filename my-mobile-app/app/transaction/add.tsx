@@ -8,21 +8,21 @@ import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 
 const EXPENSE_CATEGORIES = [
-  { id: 'Food', label: 'Food', icon: 'coffee' },
-  { id: 'Transport', label: 'Transport', icon: 'truck' },
-  { id: 'Shopping', label: 'Shopping', icon: 'shopping-bag' },
-  { id: 'Entertainment', label: 'Fun', icon: 'film' },
-  { id: 'Bills', label: 'Bills', icon: 'file-text' },
-  { id: 'Health', label: 'Health', icon: 'activity' },
-  { id: 'Other', label: 'Other', icon: 'grid' },
+  { id: 'Food', label: 'อาหาร', icon: 'coffee' },
+  { id: 'Transport', label: 'เดินทาง', icon: 'truck' },
+  { id: 'Shopping', label: 'ช้อปปิ้ง', icon: 'shopping-bag' },
+  { id: 'Entertainment', label: 'บันเทิง', icon: 'film' },
+  { id: 'Bills', label: 'บิล/ค่าน้ำไฟ', icon: 'file-text' },
+  { id: 'Health', label: 'สุขภาพ', icon: 'activity' },
+  { id: 'Other', label: 'อื่นๆ', icon: 'grid' },
 ];
 
 const INCOME_CATEGORIES = [
-  { id: 'Salary', label: 'Salary', icon: 'briefcase' },
-  { id: 'Freelance', label: 'Freelance', icon: 'monitor' },
-  { id: 'Gift', label: 'Gift', icon: 'gift' },
-  { id: 'Investment', label: 'Invest', icon: 'trending-up' },
-  { id: 'Other', label: 'Other', icon: 'grid' },
+  { id: 'Salary', label: 'เงินเดือน', icon: 'briefcase' },
+  { id: 'Freelance', label: 'ฟรีแลนซ์', icon: 'monitor' },
+  { id: 'Gift', label: 'ของขวัญ', icon: 'gift' },
+  { id: 'Investment', label: 'การลงทุน', icon: 'trending-up' },
+  { id: 'Other', label: 'อื่นๆ', icon: 'grid' },
 ];
 
 export default function AddTransactionScreen() {
@@ -43,15 +43,15 @@ export default function AddTransactionScreen() {
 
   const handleSave = async () => {
     if (!amount || isNaN(parseFloat(amount))) {
-      Alert.alert('Error', 'Please enter a valid amount');
+      Alert.alert('ผิดพลาด', 'กรุณาระบุจำนวนเงินที่ถูกต้อง');
       return;
     }
     if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a description');
+      Alert.alert('ผิดพลาด', 'กรุณาระบุรายละเอียด');
       return;
     }
     if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a category');
+      Alert.alert('ผิดพลาด', 'กรุณาเลือกหมวดหมู่');
       return;
     }
 
@@ -61,7 +61,7 @@ export default function AddTransactionScreen() {
         amount: parseFloat(amount),
         title: title.trim(),
         type: type, // 'income' or 'expense'
-        category: selectedCategory,
+        category: selectedCategory, // Save Thai category ID/Label directly or map efficiently
         date: Timestamp.fromDate(date),
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
@@ -69,7 +69,7 @@ export default function AddTransactionScreen() {
       router.back();
     } catch (error) {
       console.error(error);
-      Alert.alert('Error', 'Failed to save transaction');
+      Alert.alert('ผิดพลาด', 'บันทึกรายการไม่สำเร็จ');
     } finally {
       setLoading(false);
     }
@@ -92,7 +92,7 @@ export default function AddTransactionScreen() {
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Feather name="arrow-left" size={24} color="#FFF" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{isIncome ? 'New Income' : 'New Expense'}</Text>
+          <Text style={styles.headerTitle}>{isIncome ? 'รายรับใหม่' : 'รายจ่ายใหม่'}</Text>
           <View style={{ width: 24 }} /> 
         </View>
 
@@ -113,14 +113,14 @@ export default function AddTransactionScreen() {
       <ScrollView style={styles.formContainer} showsVerticalScrollIndicator={false}>
         {/* Date Selector */}
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>Date</Text>
+            <Text style={styles.label}>วันที่</Text>
             <TouchableOpacity 
               style={styles.dateButton} 
               onPress={() => setShowDatePicker(true)}
             >
               <Feather name="calendar" size={20} color="#636E72" />
               <Text style={styles.dateText}>
-                {date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
+                {date.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
               </Text>
             </TouchableOpacity>
         </View>
@@ -138,19 +138,19 @@ export default function AddTransactionScreen() {
 
         {/* Note / Title */}
         <View style={styles.inputGroup}>
-            <Text style={styles.label}>Description</Text>
+            <Text style={styles.label}>รายละเอียด</Text>
             <TextInput
               style={styles.textInput}
               value={title}
               onChangeText={setTitle}
-              placeholder="What is this for?"
+              placeholder="บันทึกรายละเอียด..."
               placeholderTextColor="#B0B0B0"
             />
         </View>
 
         {/* Categories */}
         <View style={styles.inputGroup}>
-          <Text style={styles.label}>Category</Text>
+          <Text style={styles.label}>หมวดหมู่</Text>
           <View style={styles.categoryGrid}>
             {categories.map((cat) => (
               <TouchableOpacity
@@ -186,7 +186,7 @@ export default function AddTransactionScreen() {
           {loading ? (
              <ActivityIndicator color="#FFF" />
           ) : (
-             <Text style={styles.saveButtonText}>Save Transaction</Text>
+             <Text style={styles.saveButtonText}>บันทึกรายการ</Text>
           )}
         </TouchableOpacity>
 
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
     color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   amountContainer: {
     flexDirection: 'row',
@@ -254,6 +255,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#2D3436',
     marginBottom: 12,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   textInput: {
     backgroundColor: '#FFFFFF',
@@ -263,6 +265,7 @@ const styles = StyleSheet.create({
     color: '#2D3436',
     borderWidth: 1,
     borderColor: '#E2E8F0',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   dateButton: {
     backgroundColor: '#FFFFFF',
@@ -277,6 +280,7 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     color: '#2D3436',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -298,6 +302,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#636E72',
     fontWeight: '500',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   saveButton: {
     borderRadius: 16,
@@ -314,5 +319,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
 });

@@ -13,7 +13,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+      Alert.alert('แจ้งเตือน', 'กรุณากรอกอีเมลและรหัสผ่านให้ครบถ้วน');
       return;
     }
 
@@ -22,13 +22,13 @@ export default function LoginScreen() {
       await signInWithEmailAndPassword(auth, email, password);
       // Auth listener in _layout.tsx will handle redirection
     } catch (error: any) {
-      let errorMessage = 'Something went wrong';
-      if (error.code === 'auth/invalid-email') errorMessage = 'Invalid email address';
-      else if (error.code === 'auth/user-not-found') errorMessage = 'User not found';
-      else if (error.code === 'auth/wrong-password') errorMessage = 'Incorrect password';
-      else if (error.code === 'auth/invalid-credential') errorMessage = 'Invalid credentials';
+      let errorMessage = 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
+      if (error.code === 'auth/invalid-email') errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง';
+      else if (error.code === 'auth/user-not-found') errorMessage = 'ไม่พบผู้ใช้งานนี้ในระบบ';
+      else if (error.code === 'auth/wrong-password') errorMessage = 'รหัสผ่านไม่ถูกต้อง';
+      else if (error.code === 'auth/invalid-credential') errorMessage = 'ข้อมูลเข้าสู่ระบบไม่ถูกต้อง';
       
-      Alert.alert('Login Error', errorMessage);
+      Alert.alert('เข้าสู่ระบบไม่สำเร็จ', errorMessage);
     } finally {
       setLoading(false);
     }
@@ -44,15 +44,15 @@ export default function LoginScreen() {
             <View style={styles.iconBox}>
                 <Feather name="activity" size={40} color="#28C76F" />
             </View>
-            <Text style={styles.title}>Welcome Back</Text>
-            <Text style={styles.subtitle}>Sign in to manage your expenses</Text>
+            <Text style={styles.title}>ยินดีต้อนรับ</Text>
+            <Text style={styles.subtitle}>เข้าสู่ระบบเพื่อจัดการรายรับ-รายจ่ายของคุณ</Text>
         </View>
 
         <View style={styles.inputGroup}>
             <Feather name="mail" size={20} color="#636E72" style={styles.inputIcon} />
             <TextInput
             style={styles.input}
-            placeholder="Email"
+            placeholder="อีเมล"
             placeholderTextColor="#B0B0B0"
             value={email}
             onChangeText={setEmail}
@@ -65,7 +65,7 @@ export default function LoginScreen() {
             <Feather name="lock" size={20} color="#636E72" style={styles.inputIcon} />
             <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="รหัสผ่าน"
             placeholderTextColor="#B0B0B0"
             value={password}
             onChangeText={setPassword}
@@ -81,14 +81,14 @@ export default function LoginScreen() {
             {loading ? (
                 <ActivityIndicator color="#FFF" />
             ) : (
-                <Text style={styles.buttonText}>Sign In</Text>
+                <Text style={styles.buttonText}>เข้าสู่ระบบ</Text>
             )}
         </TouchableOpacity>
 
         <View style={styles.footer}>
-            <Text style={styles.footerText}>Don't have an account? </Text>
+            <Text style={styles.footerText}>ยังไม่มีบัญชีสมาชิก? </Text>
             <TouchableOpacity onPress={() => router.push('/auth/register')}>
-            <Text style={styles.linkText}>Sign Up</Text>
+            <Text style={styles.linkText}>สมัครสมาชิก</Text>
             </TouchableOpacity>
         </View>
       </View>
@@ -99,7 +99,7 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF', // Clean White
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
   },
   formContainer: {
@@ -123,10 +123,12 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: '#2D3436',
     marginBottom: 8,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto', // Tried to use standard readable fonts
   },
   subtitle: {
     fontSize: 16,
     color: '#636E72',
+    textAlign: 'center',
   },
   inputGroup: {
     flexDirection: 'row',
@@ -148,7 +150,7 @@ const styles = StyleSheet.create({
     color: '#2D3436',
   },
   button: {
-    backgroundColor: '#2D3436', // Dark elegant button
+    backgroundColor: '#2D3436',
     borderRadius: 16,
     height: 56,
     justifyContent: 'center',
