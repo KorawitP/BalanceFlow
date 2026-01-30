@@ -15,15 +15,15 @@ export default function RootLayout() {
   useEffect(() => {
     if (loading) return;
 
-    const inAuthGroup = segments[0] === 'auth';
+    const inAuthGroup = (segments[0] as string) === 'auth';
     
     // Check if we are in the auth group or not
     if (!user && !inAuthGroup) {
       // If user is NOT logged in and NOT in auth group -> Redirect to Login
-      router.replace('/auth/login');
+      router.replace('/auth/login' as any);
     } else if (user && inAuthGroup) {
       // If user IS logged in but is in auth group -> Redirect to Home
-      router.replace('/(tabs)');
+      router.replace('/(tabs)' as any);
     }
   }, [user, loading, segments]);
 
