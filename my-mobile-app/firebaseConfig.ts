@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
-// import { getAuth } from 'firebase/auth'; // Uncomment if you need Authentication
+import { getAuth } from 'firebase/auth';
 
 // TODO: Replace the following with your app's Firebase project configuration
 // You can find these values in the Firebase Console after clicking "Register app"
@@ -20,4 +20,4 @@ const app = initializeApp(firebaseConfig);
 
 // Initialize Services
 export const db = getFirestore(app);
-// export const auth = getAuth(app); // Uncomment if using Auth
+export const auth = getAuth(app);
