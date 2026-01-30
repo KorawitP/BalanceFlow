@@ -209,14 +209,14 @@ export default function HomeScreen() {
       <View style={styles.fabContainer}>
          <TouchableOpacity 
             style={[styles.fab, styles.fabExpense]} 
-            onPress={() => router.push({ pathname: '/transaction/add', params: { type: 'expense' } })}
+            onPress={() => router.push({ pathname: '/transaction/add' as any, params: { type: 'expense' } })}
         >
             <Feather name="minus" size={24} color="#FFF" />
         </TouchableOpacity>
 
         <TouchableOpacity 
             style={[styles.fab, styles.fabIncome]} 
-            onPress={() => router.push({ pathname: '/transaction/add', params: { type: 'income' } })}
+            onPress={() => router.push({ pathname: '/transaction/add' as any, params: { type: 'income' } })}
         >
             <Feather name="plus" size={24} color="#FFF" />
         </TouchableOpacity>
