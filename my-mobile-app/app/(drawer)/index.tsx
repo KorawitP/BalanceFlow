@@ -1,12 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, SafeAreaView, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, SafeAreaView, Platform, RefreshControl } from 'react-native';
 import { collection, query, onSnapshot, orderBy, doc, deleteDoc } from 'firebase/firestore';
-import { db, auth } from '../../firebaseConfig';
+import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'expo-router';
 import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
+import TransactionItem from '../../components/TransactionItem';
 
 // Types
 interface Transaction {
@@ -23,6 +24,7 @@ export default function HomeScreen() {
   const { user, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
   const navigation = useNavigation();
 
@@ -31,10 +33,9 @@ export default function HomeScreen() {
   const [income, setIncome] = useState(0);
   const [expense, setExpense] = useState(0);
 
-  useEffect(() => {
-    if (!user) return;
+  const subscribeToTransactions = useCallback(() => {
+    if (!user) return () => {};
 
-    // Realtime Query: Order by 'date' descending (newest first)
     const q = query(
       collection(db, 'users', user.uid, 'transactions'),
       orderBy('date', 'desc')
@@ -49,14 +50,21 @@ export default function HomeScreen() {
       setTransactions(list);
       calculateSummary(list);
       setLoading(false);
+      setRefreshing(false);
     }, (error) => {
       console.error("Firestore Error:", error);
       Alert.alert("เกิดข้อผิดพลาด", "ไม่สามารถดึงข้อมูลรายการได้");
       setLoading(false);
+      setRefreshing(false);
     });
 
-    return () => unsubscribe();
+    return unsubscribe;
   }, [user]);
+
+  useEffect(() => {
+    const unsubscribe = subscribeToTransactions();
+    return () => unsubscribe();
+  }, [subscribeToTransactions]);
 
   const calculateSummary = (list: Transaction[]) => {
     let inc = 0;
@@ -77,14 +85,14 @@ export default function HomeScreen() {
     });
   };
 
-  const formatDate = (timestamp: any) => {
-    if (!timestamp) return '';
-    const date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-    return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  // Pull-to-Refresh handler
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    // The subscription will automatically update
+  }, []);
 
-  // Delete Action
-  const handleDelete = (id: string) => {
+  // Delete Action - Memoized with useCallback
+  const handleDelete = useCallback((id: string) => {
     Alert.alert(
       "ยืนยันการลบ",
       "คุณแน่ใจหรือไม่ว่าต้องการลบรายการนี้?",
@@ -105,55 +113,24 @@ export default function HomeScreen() {
         }
       ]
     );
-  };
+  }, [user?.uid]);
 
-  const renderItem = ({ item }: { item: Transaction }) => {
-    const isIncome = item.type === 'income';
-    
-    // Simple category translation map
-    const categoryMap: {[key: string]: string} = {
-      'Food': 'อาหาร',
-      'Transport': 'เดินทาง',
-      'Shopping': 'ช้อปปิ้ง',
-      'Entertainment': 'บันเทิง',
-      'Bills': 'บิล/ค่าน้ำไฟ',
-      'Health': 'สุขภาพ',
-      'Other': 'อื่นๆ',
-      'Salary': 'เงินเดือน',
-      'Freelance': 'ฟรีแลนซ์',
-      'Gift': 'ของขวัญ',
-      'Investment': 'การลงทุน'
-    };
-    
-    const displayCategory = categoryMap[item.category] || item.category;
+  // Navigate to Edit screen - Memoized with useCallback
+  const handleItemPress = useCallback((item: Transaction) => {
+    router.push({
+      pathname: '/transaction/edit' as any,
+      params: { id: item.id, type: item.type }
+    });
+  }, [router]);
 
-    return (
-      <TouchableOpacity 
-        style={styles.card} 
-        onLongPress={() => handleDelete(item.id)}
-      >
-        <View style={styles.cardLeft}>
-          <View style={[styles.iconBox, { backgroundColor: isIncome ? '#E6F9EF' : '#FFF0F0' }]}>
-            <Feather 
-              name={isIncome ? "arrow-up-circle" : "arrow-down-circle"} 
-              size={24} 
-              color={isIncome ? '#28C76F' : '#FF4D4D'} 
-            />
-          </View>
-          <View>
-            <Text style={styles.cardTitle}>{item.title}</Text>
-            <View style={styles.cardMeta}>
-              <Text style={styles.cardCategory}>{displayCategory}</Text>
-              <Text style={styles.cardDate}>{formatDate(item.date)}</Text>
-            </View>
-          </View>
-        </View>
-        <Text style={[styles.cardAmount, { color: isIncome ? '#28C76F' : '#FF4D4D' }]}>
-          {isIncome ? '+' : '-'} {formatMoney(item.amount)}
-        </Text>
-      </TouchableOpacity>
-    );
-  };
+  // Optimized renderItem using the memoized component
+  const renderItem = useCallback(({ item }: { item: Transaction }) => (
+    <TransactionItem 
+      item={item} 
+      onPress={handleItemPress}
+      onLongPress={handleDelete}
+    />
+  ), [handleItemPress, handleDelete]);
 
   if (authLoading || loading) {
     return (
@@ -211,6 +188,7 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>รายการล่าสุด</Text>
+          <Text style={styles.sectionHint}>แตะเพื่อแก้ไข • กดค้างเพื่อลบ</Text>
         </View>
 
         {transactions.length === 0 ? (
@@ -226,6 +204,14 @@ export default function HomeScreen() {
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#28C76F']}
+                tintColor="#28C76F"
+              />
+            }
           />
         )}
       </View>
@@ -350,6 +336,11 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: '#2D3436',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
+  },
+  sectionHint: {
+    fontSize: 11,
+    color: '#8E8E93',
     fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
   listContent: {

@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Switch, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Platform, Switch, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { auth, db } from '../../firebaseConfig';
 import { useRouter, useNavigation } from 'expo-router';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { useAuth } from '../../hooks/useAuth';
 import { DrawerActions } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+const THEME_STORAGE_KEY = '@balanceflow_theme';
 
 export default function SettingsScreen() {
   const router = useRouter();
@@ -17,6 +20,7 @@ export default function SettingsScreen() {
 
   useEffect(() => {
     fetchUserData();
+    loadThemePreference();
   }, [user]);
 
   const fetchUserData = async () => {
@@ -26,6 +30,36 @@ export default function SettingsScreen() {
       if (docSnap.exists()) {
         setUserData(docSnap.data());
       }
+    }
+  };
+
+  // Load saved theme preference
+  const loadThemePreference = async () => {
+    try {
+      const savedTheme = await AsyncStorage.getItem(THEME_STORAGE_KEY);
+      if (savedTheme) {
+        setDarkMode(savedTheme === 'dark');
+      }
+    } catch (error) {
+      console.error('Failed to load theme preference:', error);
+    }
+  };
+
+  // Handle Dark Mode Toggle
+  const handleToggleDarkMode = async (value: boolean) => {
+    setDarkMode(value);
+    try {
+      await AsyncStorage.setItem(THEME_STORAGE_KEY, value ? 'dark' : 'light');
+      // Show info that app restart may be needed
+      if (value) {
+        Alert.alert(
+          'โหมดมืดเปิดใช้งาน',
+          'การเปลี่ยนแปลงจะมีผลเมื่อเปิดแอปครั้งถัดไป',
+          [{ text: 'ตกลง' }]
+        );
+      }
+    } catch (error) {
+      console.error('Failed to save theme preference:', error);
     }
   };
 
@@ -94,6 +128,20 @@ export default function SettingsScreen() {
             value={isNotifyEnabled} 
             onValueChange={handleToggleNotify} 
             trackColor={{ false: "#E2E8F0", true: "#28C76F" }}
+          />
+        </View>
+
+        <View style={styles.row}>
+          <View style={styles.rowLeft}>
+            <View style={[styles.iconBox, { backgroundColor: isDarkMode ? '#2D3436' : '#F0F2F5' }]}>
+               <Feather name="moon" size={20} color={isDarkMode ? '#FFF' : '#636E72'} />
+            </View>
+            <Text style={styles.rowLabel}>โหมดมืด</Text>
+          </View>
+          <Switch 
+            value={isDarkMode} 
+            onValueChange={handleToggleDarkMode} 
+            trackColor={{ false: "#E2E8F0", true: "#2D3436" }}
           />
         </View>
       </View>

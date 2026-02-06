@@ -43,6 +43,8 @@ export default function RootLayout() {
           <Stack.Screen name="(drawer)" options={{ headerShown: false }} />
           <Stack.Screen name="auth/login" options={{ headerShown: false }} />
           <Stack.Screen name="auth/register" options={{ headerShown: false }} />
+          <Stack.Screen name="transaction/add" options={{ headerShown: false }} />
+          <Stack.Screen name="transaction/edit" options={{ headerShown: false }} />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
         </Stack>
       </ThemeProvider>
