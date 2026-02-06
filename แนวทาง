@@ -1,0 +1,19 @@
+Phase 1: Core Fixes (1-2 วัน)
+├── ✏️ เพิ่มหน้าแก้ไขรายการ (Edit Transaction)
+├── 🔁 ใช้ useCallback + memo() ใน FlatList
+└── 🔧 แก้ไข Dark Mode Toggle ให้ทำงานจริง
+
+Phase 2: Essential Features (3-5 วัน)
+├── 📊 หน้ารายงาน/สถิติพร้อมกราฟ
+├── 🔍 ระบบค้นหา/กรองรายการ
+└── ↻ Pull-to-Refresh
+
+Phase 3: Advanced Features (5-7 วัน)
+├── 💰 ระบบตั้งงบประมาณ
+├── 🔔 Push Notifications
+└── 📤 Export ข้อมูล
+
+Phase 4: Polish (2-3 วัน)
+├── 🎨 Custom Fonts (Prompt/Inter)
+├── 📱 Onboarding Screens
+└── ✨ Skeleton Loading + Haptic Feedback
