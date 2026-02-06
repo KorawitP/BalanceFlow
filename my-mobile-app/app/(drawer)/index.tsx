@@ -4,6 +4,8 @@ import { collection, query, onSnapshot, orderBy, doc, deleteDoc } from 'firebase
 import { db, auth } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'expo-router';
+import { useNavigation } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 
 // Types
@@ -22,6 +24,7 @@ export default function HomeScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
+  const navigation = useNavigation();
 
   // Summary State
   const [totalBalance, setTotalBalance] = useState(0);
@@ -165,13 +168,19 @@ export default function HomeScreen() {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <View>
-            <Text style={styles.greeting}>เริ่มต้นวันใหม่,</Text>
-            <Text style={styles.username}>ยอดเงินคงเหลือ</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+             <TouchableOpacity 
+                onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} 
+                style={styles.menuButton}
+             >
+                <Feather name="menu" size={24} color="#2D3436" />
+             </TouchableOpacity>
+             <View>
+                <Text style={styles.greeting}>เริ่มต้นวันใหม่,</Text>
+                <Text style={styles.username}>ยอดเงินคงเหลือ</Text>
+             </View>
           </View>
-          <TouchableOpacity onPress={() => auth.signOut()} style={{ padding: 8 }}>
-            <Feather name="log-out" size={24} color="#636E72" />
-          </TouchableOpacity>
+          {/* Logout removed from here, moved to settings/drawer */}
         </View>
         <Text style={styles.totalBalance}>฿{formatMoney(totalBalance)}</Text>
         
@@ -256,6 +265,12 @@ const styles = StyleSheet.create({
     padding: 24,
     backgroundColor: '#FFFFFF',
     paddingTop: Platform.OS === 'android' ? 40 : 20,
+  },
+  menuButton: {
+    padding: 8,
+    borderRadius: 8,
+    backgroundColor: '#F5F7FA',
+    marginRight: 4,
   },
   greeting: {
     fontSize: 14,
