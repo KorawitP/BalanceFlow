@@ -15,7 +15,7 @@ export default function DrawerLayout() {
           drawerLabelStyle: {
             fontSize: 16,
             fontWeight: '600',
-            marginLeft: -20,
+            marginLeft: 0,
           },
           drawerStyle: {
             width: 280,
