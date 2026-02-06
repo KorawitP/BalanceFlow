@@ -34,6 +34,16 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
+          name="reports"
+          options={{
+            drawerLabel: 'รายงาน',
+            title: 'รายงาน',
+            drawerIcon: ({ color, size }) => (
+              <Feather name="pie-chart" size={24} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
           name="settings"
           options={{
             drawerLabel: 'ตั้งค่า',
