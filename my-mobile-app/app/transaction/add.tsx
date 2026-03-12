@@ -7,24 +7,7 @@ import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
 import { checkBudgetAfterExpense } from '../../services/notificationService';
-
-const EXPENSE_CATEGORIES = [
-  { id: 'Food', label: 'อาหาร', icon: 'coffee' },
-  { id: 'Transport', label: 'เดินทาง', icon: 'truck' },
-  { id: 'Shopping', label: 'ช้อปปิ้ง', icon: 'shopping-bag' },
-  { id: 'Entertainment', label: 'บันเทิง', icon: 'film' },
-  { id: 'Bills', label: 'บิล/ค่าน้ำไฟ', icon: 'file-text' },
-  { id: 'Health', label: 'สุขภาพ', icon: 'activity' },
-  { id: 'Other', label: 'อื่นๆ', icon: 'grid' },
-];
-
-const INCOME_CATEGORIES = [
-  { id: 'Salary', label: 'เงินเดือน', icon: 'briefcase' },
-  { id: 'Freelance', label: 'ฟรีแลนซ์', icon: 'monitor' },
-  { id: 'Gift', label: 'ของขวัญ', icon: 'gift' },
-  { id: 'Investment', label: 'การลงทุน', icon: 'trending-up' },
-  { id: 'Other', label: 'อื่นๆ', icon: 'grid' },
-];
+import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
 
 export default function AddTransactionScreen() {
   const router = useRouter();

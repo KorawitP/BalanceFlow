@@ -16,26 +16,12 @@ import { Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { useBudget, BudgetWithSpent } from '../../hooks/useBudget';
-
-// ใช้ชุดหมวดหมู่เดียวกับ add.tsx
-const EXPENSE_CATEGORIES = [
-  { id: 'Food', label: 'อาหาร', icon: 'coffee' },
-  { id: 'Transport', label: 'เดินทาง', icon: 'truck' },
-  { id: 'Shopping', label: 'ช้อปปิ้ง', icon: 'shopping-bag' },
-  { id: 'Entertainment', label: 'บันเทิง', icon: 'film' },
-  { id: 'Bills', label: 'บิล/ค่าน้ำไฟ', icon: 'file-text' },
-  { id: 'Health', label: 'สุขภาพ', icon: 'activity' },
-  { id: 'Other', label: 'อื่นๆ', icon: 'grid' },
-];
+import { EXPENSE_CATEGORIES, getCategoryInfo } from '../../constants/categories';
 
 const MONTHS_TH = [
   'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม',
 ];
-
-const getCategoryInfo = (categoryId: string) => {
-  return EXPENSE_CATEGORIES.find((c) => c.id === categoryId) || { id: categoryId, label: categoryId, icon: 'grid' };
-};
 
 const getProgressColor = (percentage: number) => {
   if (percentage >= 100) return '#FF4D4D';
