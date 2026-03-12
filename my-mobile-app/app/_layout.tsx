@@ -6,6 +6,7 @@ import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { registerForNotifications } from '../services/notificationService';
+import { seedDefaultCategories } from '../scripts/seedCategories';
 
 export default function RootLayout() {
   const { user, loading } = useAuth();
@@ -24,9 +25,10 @@ export default function RootLayout() {
       router.replace('/(drawer)' as any);
     }
 
-    // ขอ notification permission เมื่อ user login สำเร็จ
+    // ขอ notification permission และ seed หมวดหมู่เมื่อ user login สำเร็จ
     if (user) {
       registerForNotifications();
+      seedDefaultCategories();
     }
   }, [user, loading, segments]);
 
