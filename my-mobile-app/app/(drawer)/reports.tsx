@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, Platform, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
@@ -7,6 +7,7 @@ import { BarChart, LineChart } from 'react-native-chart-kit';
 import { collection, query, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
+import { exportAndShareCSV } from '../../services/exportService';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -44,6 +45,16 @@ export default function ReportsScreen() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [viewMode, setViewMode] = useState<'daily' | 'monthly' | 'chart'>('daily');
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await exportAndShareCSV(transactions);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Load all transactions
   useEffect(() => {
@@ -247,13 +258,29 @@ export default function ReportsScreen() {
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Header */}
       <View style={styles.header}>
+        <View style={styles.headerLeft}>
+          <TouchableOpacity 
+            onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} 
+            style={styles.menuButton}
+          >
+            <Feather name="menu" size={24} color="#2D3436" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>รายงาน</Text>
+        </View>
         <TouchableOpacity 
-          onPress={() => navigation.dispatch(DrawerActions.toggleDrawer())} 
-          style={styles.menuButton}
+          style={styles.exportButton} 
+          onPress={handleExport}
+          disabled={exporting || transactions.length === 0}
         >
-          <Feather name="menu" size={24} color="#2D3436" />
+          {exporting ? (
+            <ActivityIndicator size="small" color="#FFF" />
+          ) : (
+            <>
+              <Feather name="download" size={16} color="#FFF" />
+              <Text style={styles.exportButtonText}>CSV</Text>
+            </>
+          )}
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>รายงาน</Text>
       </View>
 
       {/* View Mode Selector */}
@@ -546,6 +573,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingTop: Platform.OS === 'ios' ? 60 : 50,
     paddingBottom: 16,
@@ -860,5 +888,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#636E72',
     fontWeight: '600',
+  },
+  headerLeft: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+  },
+  exportButton: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 4,
+    backgroundColor: '#28C76F',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+  },
+  exportButtonText: {
+    fontSize: 13,
+    fontWeight: '600' as const,
+    color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
 });
