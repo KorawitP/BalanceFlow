@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, SafeAreaView, Platform, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, ActivityIndicator, Alert, SafeAreaView, Platform, RefreshControl, Animated } from 'react-native';
 import { collection, query, onSnapshot, orderBy, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
@@ -8,6 +8,7 @@ import { useNavigation } from 'expo-router';
 import { DrawerActions } from '@react-navigation/native';
 import { Feather } from '@expo/vector-icons';
 import TransactionItem from '../../components/TransactionItem';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 
 // Types
 interface Transaction {
@@ -28,10 +29,35 @@ export default function HomeScreen() {
   const router = useRouter();
   const navigation = useNavigation();
 
-  // Summary State
-  const [totalBalance, setTotalBalance] = useState(0);
-  const [income, setIncome] = useState(0);
-  const [expense, setExpense] = useState(0);
+  // Filter State
+  const [showFilter, setShowFilter] = useState(false);
+  const [startDate, setStartDate] = useState<Date | null>(null);
+  const [endDate, setEndDate] = useState<Date | null>(null);
+  const [showStartPicker, setShowStartPicker] = useState(false);
+  const [showEndPicker, setShowEndPicker] = useState(false);
+
+  // Filtered transactions + summary (useMemo)
+  const filteredTransactions = useMemo(() => {
+    if (!startDate && !endDate) return transactions;
+    return transactions.filter(t => {
+      const txDate = t.date?.toDate ? t.date.toDate() : new Date(t.date);
+      if (startDate && txDate < new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate())) return false;
+      if (endDate && txDate > new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate(), 23, 59, 59)) return false;
+      return true;
+    });
+  }, [transactions, startDate, endDate]);
+
+  const { income, expense, totalBalance } = useMemo(() => {
+    let inc = 0;
+    let exp = 0;
+    filteredTransactions.forEach(item => {
+      if (item.type === 'income') inc += item.amount;
+      else if (item.type === 'expense') exp += item.amount;
+    });
+    return { income: inc, expense: exp, totalBalance: inc - exp };
+  }, [filteredTransactions]);
+
+  const isFiltering = startDate !== null || endDate !== null;
 
   const subscribeToTransactions = useCallback(() => {
     if (!user) return () => {};
@@ -48,7 +74,6 @@ export default function HomeScreen() {
       })) as Transaction[];
       
       setTransactions(list);
-      calculateSummary(list);
       setLoading(false);
       setRefreshing(false);
     }, (error) => {
@@ -66,16 +91,25 @@ export default function HomeScreen() {
     return () => unsubscribe();
   }, [subscribeToTransactions]);
 
-  const calculateSummary = (list: Transaction[]) => {
-    let inc = 0;
-    let exp = 0;
-    list.forEach(item => {
-      if (item.type === 'income') inc += item.amount;
-      else if (item.type === 'expense') exp += item.amount;
-    });
-    setIncome(inc);
-    setExpense(exp);
-    setTotalBalance(inc - exp);
+  // Date picker handlers
+  const onStartDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowStartPicker(Platform.OS === 'ios');
+    if (selectedDate) setStartDate(selectedDate);
+  };
+
+  const onEndDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    setShowEndPicker(Platform.OS === 'ios');
+    if (selectedDate) setEndDate(selectedDate);
+  };
+
+  const resetFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setShowFilter(false);
+  };
+
+  const formatDateShort = (date: Date) => {
+    return date.toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' });
   };
 
   const formatMoney = (amount: number) => {
@@ -157,7 +191,12 @@ export default function HomeScreen() {
                 <Text style={styles.username}>ยอดเงินคงเหลือ</Text>
              </View>
           </View>
-          {/* Logout removed from here, moved to settings/drawer */}
+          <TouchableOpacity 
+            onPress={() => setShowFilter(!showFilter)} 
+            style={[styles.menuButton, isFiltering && styles.filterActiveButton]}
+          >
+            <Feather name="search" size={22} color={isFiltering ? '#FFF' : '#2D3436'} />
+          </TouchableOpacity>
         </View>
         <Text style={styles.totalBalance}>฿{formatMoney(totalBalance)}</Text>
         
@@ -182,24 +221,93 @@ export default function HomeScreen() {
             </View>
           </View>
         </View>
+
+        {/* Filter Panel */}
+        {showFilter && (
+          <View style={styles.filterPanel}>
+            <View style={styles.filterRow}>
+              <TouchableOpacity 
+                style={styles.dateButton} 
+                onPress={() => setShowStartPicker(true)}
+              >
+                <Feather name="calendar" size={14} color="#636E72" />
+                <Text style={styles.dateButtonText}>
+                  {startDate ? formatDateShort(startDate) : 'วันเริ่มต้น'}
+                </Text>
+              </TouchableOpacity>
+
+              <Feather name="arrow-right" size={16} color="#B2BEC3" />
+
+              <TouchableOpacity 
+                style={styles.dateButton} 
+                onPress={() => setShowEndPicker(true)}
+              >
+                <Feather name="calendar" size={14} color="#636E72" />
+                <Text style={styles.dateButtonText}>
+                  {endDate ? formatDateShort(endDate) : 'วันสิ้นสุด'}
+                </Text>
+              </TouchableOpacity>
+
+              {isFiltering && (
+                <TouchableOpacity style={styles.resetButton} onPress={resetFilter}>
+                  <Feather name="x" size={16} color="#FF4D4D" />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {isFiltering && (
+              <Text style={styles.filterResultText}>
+                แสดง {filteredTransactions.length} รายการ
+              </Text>
+            )}
+
+            {showStartPicker && (
+              <DateTimePicker
+                value={startDate || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onStartDateChange}
+                maximumDate={endDate || new Date()}
+              />
+            )}
+            {showEndPicker && (
+              <DateTimePicker
+                value={endDate || new Date()}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={onEndDateChange}
+                minimumDate={startDate || undefined}
+                maximumDate={new Date()}
+              />
+            )}
+          </View>
+        )}
       </View>
 
       {/* Transactions List */}
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>รายการล่าสุด</Text>
+          <Text style={styles.sectionTitle}>
+            {isFiltering ? 'ผลการค้นหา' : 'รายการล่าสุด'}
+          </Text>
           <Text style={styles.sectionHint}>แตะเพื่อแก้ไข • กดค้างเพื่อลบ</Text>
         </View>
 
-        {transactions.length === 0 ? (
+        {filteredTransactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <Feather name="list" size={48} color="#E2E8F0" />
-            <Text style={styles.emptyText}>ยังไม่มีรายการ</Text>
-            <Text style={styles.emptySubText}>เริ่มต้นบันทึกรายรับ-รายจ่ายของคุณได้เลย</Text>
+            <Feather name={isFiltering ? 'search' : 'list'} size={48} color="#E2E8F0" />
+            <Text style={styles.emptyText}>
+              {isFiltering ? 'ไม่พบรายการ' : 'ยังไม่มีรายการ'}
+            </Text>
+            <Text style={styles.emptySubText}>
+              {isFiltering 
+                ? 'ลองเปลี่ยนช่วงวันที่แล้วค้นหาอีกครั้ง' 
+                : 'เริ่มต้นบันทึกรายรับ-รายจ่ายของคุณได้เลย'}
+            </Text>
           </View>
         ) : (
           <FlatList
-            data={transactions}
+            data={filteredTransactions}
             renderItem={renderItem}
             keyExtractor={item => item.id}
             contentContainerStyle={styles.listContent}
@@ -441,5 +549,48 @@ const styles = StyleSheet.create({
   },
   fabExpense: {
     backgroundColor: '#FF4D4D',
+  },
+  filterActiveButton: {
+    backgroundColor: '#007AFF',
+  },
+  filterPanel: {
+    marginTop: 16,
+    backgroundColor: '#F5F7FA',
+    borderRadius: 16,
+    padding: 16,
+  },
+  filterRow: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 8,
+  },
+  dateButton: {
+    flex: 1,
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: 6,
+    backgroundColor: '#FFFFFF',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  dateButtonText: {
+    fontSize: 13,
+    color: '#2D3436',
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
+  },
+  resetButton: {
+    padding: 8,
+    backgroundColor: '#FFF0F0',
+    borderRadius: 8,
+  },
+  filterResultText: {
+    fontSize: 12,
+    color: '#636E72',
+    marginTop: 8,
+    textAlign: 'center' as const,
+    fontFamily: Platform.OS === 'ios' ? 'Thonburi' : 'Roboto',
   },
 });
