@@ -1,6 +1,6 @@
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 
 interface ExportTransaction {
   id: string;
@@ -43,7 +43,7 @@ export const generateCSV = (transactions: ExportTransaction[]): string => {
 };
 
 /**
- * สร้างไฟล์ CSV และเปิด Share Sheet
+ * สร้างไฟล์ CSV และเปิด Share Sheet (Native) หรือ Download (Web)
  */
 export const exportAndShareCSV = async (transactions: ExportTransaction[]): Promise<void> => {
   try {
@@ -55,26 +55,41 @@ export const exportAndShareCSV = async (transactions: ExportTransaction[]): Prom
     const csvContent = generateCSV(transactions);
     const now = new Date();
     const fileName = `BalanceFlow_${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}.csv`;
-    const filePath = `${FileSystem.cacheDirectory}${fileName}`;
 
-    // เขียนไฟล์ CSV
-    await FileSystem.writeAsStringAsync(filePath, csvContent, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
+    if (Platform.OS === 'web') {
+      // สำหรับ Web: สร้าง Blob และ Download Link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // สำหรับ iOS/Android: ใช้ Expo FileSystem และ Sharing
+      const filePath = `${FileSystem.cacheDirectory}${fileName}`;
 
-    // ตรวจสอบว่า device รองรับ Sharing หรือไม่
-    const isAvailable = await Sharing.isAvailableAsync();
-    if (!isAvailable) {
-      Alert.alert('ไม่รองรับ', 'อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์');
-      return;
+      // เขียนไฟล์ CSV
+      await FileSystem.writeAsStringAsync(filePath, csvContent, {
+        encoding: FileSystem.EncodingType.UTF8,
+      });
+
+      // ตรวจสอบว่า device รองรับ Sharing หรือไม่
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (!isAvailable) {
+        Alert.alert('ไม่รองรับ', 'อุปกรณ์นี้ไม่รองรับการแชร์ไฟล์');
+        return;
+      }
+
+      // เปิด Share Sheet
+      await Sharing.shareAsync(filePath, {
+        mimeType: 'text/csv',
+        dialogTitle: 'ส่งออกข้อมูล BalanceFlow',
+        UTI: 'public.comma-separated-values-text',
+      });
     }
-
-    // เปิด Share Sheet
-    await Sharing.shareAsync(filePath, {
-      mimeType: 'text/csv',
-      dialogTitle: 'ส่งออกข้อมูล BalanceFlow',
-      UTI: 'public.comma-separated-values-text',
-    });
   } catch (error) {
     console.error('Export CSV Error:', error);
     Alert.alert('เกิดข้อผิดพลาด', 'ไม่สามารถส่งออกไฟล์ CSV ได้');

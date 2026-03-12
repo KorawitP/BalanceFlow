@@ -42,23 +42,42 @@ export function useBudget() {
   // 1) Realtime listener: budgets ของเดือนปัจจุบัน
   // ============================
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      console.log('[Budget] user is null, skip');
+      setLoading(false);
+      return;
+    }
+
+    console.log('[Budget] uid:', user.uid, 'month:', currentMonth, 'year:', currentYear);
 
     const budgetRef = collection(db, 'users', user.uid, 'budgets');
-    const q = query(
-      budgetRef,
-      where('month', '==', currentMonth),
-      where('year', '==', currentYear)
-    );
+    const q = query(budgetRef);
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const list = snapshot.docs.map((d) => ({
-        id: d.id,
-        ...d.data(),
-      })) as Budget[];
-      setBudgets(list);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        console.log('[Budget] snapshot size:', snapshot.size);
+        const list = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...d.data(),
+        })) as Budget[];
+
+        console.log('[Budget] raw list:', JSON.stringify(list));
+
+        // กรองเอาเฉพาะเดือน/ปี ปัจจุบัน
+        const currentBudgets = list.filter(
+          (b) => b.month === currentMonth && b.year === currentYear
+        );
+
+        console.log('[Budget] filtered:', currentBudgets.length, 'items');
+        setBudgets(currentBudgets);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('[Budget] Snapshot error:', error);
+        setLoading(false);
+      }
+    );
 
     return () => unsubscribe();
   }, [user, currentMonth, currentYear]);
@@ -72,35 +91,49 @@ export function useBudget() {
       return;
     }
 
-    const startOfMonth = new Date(currentYear, currentMonth, 1);
-    const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+    try {
+      const startOfMonth = new Date(currentYear, currentMonth, 1);
+      const endOfMonth = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
 
-    const txRef = collection(db, 'users', user.uid, 'transactions');
-    const txQuery = query(
-      txRef,
-      where('type', '==', 'expense'),
-      where('date', '>=', Timestamp.fromDate(startOfMonth)),
-      where('date', '<=', Timestamp.fromDate(endOfMonth))
-    );
+      const txRef = collection(db, 'users', user.uid, 'transactions');
+      // ค้นหาแค่ตาม date เพื่อหลีกเลี่ยง error 'The query requires an index'
+      // และกรอง type === 'expense' ในฝั่ง client
+      const txQuery = query(
+        txRef,
+        where('date', '>=', Timestamp.fromDate(startOfMonth)),
+        where('date', '<=', Timestamp.fromDate(endOfMonth))
+      );
 
-    const txSnapshot = await getDocs(txQuery);
+      const txSnapshot = await getDocs(txQuery);
 
-    // รวมยอดตามหมวดหมู่
-    const spentMap: Record<string, number> = {};
-    txSnapshot.docs.forEach((d) => {
-      const data = d.data();
-      const cat = data.category as string;
-      spentMap[cat] = (spentMap[cat] || 0) + (data.amount as number);
-    });
+      // รวมยอดตามหมวดหมู่
+      const spentMap: Record<string, number> = {};
+      txSnapshot.docs.forEach((d) => {
+        const data = d.data();
+        if (data.type === 'expense') {
+          const cat = data.category as string;
+          spentMap[cat] = (spentMap[cat] || 0) + (data.amount as number);
+        }
+      });
 
-    // ผูกกับ budget
-    const result: BudgetWithSpent[] = budgets.map((b) => {
-      const spent = spentMap[b.category] || 0;
-      const pct = b.limitAmount > 0 ? Math.round((spent / b.limitAmount) * 100) : 0;
-      return { ...b, spentAmount: spent, percentage: pct };
-    });
+      // ผูกกับ budget
+      const result: BudgetWithSpent[] = budgets.map((b) => {
+        const spent = spentMap[b.category] || 0;
+        const pct = b.limitAmount > 0 ? Math.round((spent / b.limitAmount) * 100) : 0;
+        return { ...b, spentAmount: spent, percentage: pct };
+      });
 
-    setBudgetsWithSpent(result);
+      setBudgetsWithSpent(result);
+    } catch (error) {
+      console.error('Error calculating spent budget:', error);
+      // Fallback in case query fails, still show the budget items
+      const fallbackResult: BudgetWithSpent[] = budgets.map((b) => ({
+        ...b,
+        spentAmount: 0,
+        percentage: 0,
+      }));
+      setBudgetsWithSpent(fallbackResult);
+    }
   }, [user, budgets, currentMonth, currentYear]);
 
   useEffect(() => {

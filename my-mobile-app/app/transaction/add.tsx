@@ -30,10 +30,6 @@ export default function AddTransactionScreen() {
       Alert.alert('ผิดพลาด', 'กรุณาระบุจำนวนเงินที่ถูกต้อง');
       return;
     }
-    if (!title.trim()) {
-      Alert.alert('ผิดพลาด', 'กรุณาระบุรายละเอียด');
-      return;
-    }
     if (!selectedCategory) {
       Alert.alert('ผิดพลาด', 'กรุณาเลือกหมวดหมู่');
       return;

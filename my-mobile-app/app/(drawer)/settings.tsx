@@ -95,32 +95,6 @@ export default function SettingsScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>บัญชีของผู้ใช้</Text>
-        
-        {/* Future Feature: Edit Profile */}
-        <TouchableOpacity style={styles.row} onPress={() => Alert.alert("Coming Soon", "ฟีเจอร์แก้ไขข้อมูลกำลังพัฒนา")}>
-          <View style={styles.rowLeft}>
-            <View style={[styles.iconBox, { backgroundColor: '#E6F9EF' }]}>
-               <Feather name="edit" size={20} color="#28C76F" />
-            </View>
-            <Text style={styles.rowLabel}>แก้ไขข้อมูลส่วนตัว</Text>
-          </View>
-          <Feather name="chevron-right" size={20} color="#B0B0B0" />
-        </TouchableOpacity>
-
-        {/* Future Feature: Change Password */}
-        <TouchableOpacity style={styles.row} onPress={() => Alert.alert("Coming Soon", "ฟีเจอร์เปลี่ยนรหัสผ่านกำลังพัฒนา")}>
-          <View style={styles.rowLeft}>
-            <View style={[styles.iconBox, { backgroundColor: '#FFF0F0' }]}>
-               <Feather name="lock" size={20} color="#FF4D4D" />
-            </View>
-            <Text style={styles.rowLabel}>เปลี่ยนรหัสผ่าน</Text>
-          </View>
-           <Feather name="chevron-right" size={20} color="#B0B0B0" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.section}>
         <Text style={styles.sectionTitle}>เกี่ยวกับแอปพลิเคชัน</Text>
         
         <TouchableOpacity style={styles.row}>
@@ -130,16 +104,6 @@ export default function SettingsScreen() {
             </View>
             <Text style={styles.rowLabel}>เวอร์ชัน 1.0.0 (Beta)</Text>
           </View>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.row} onPress={() => Alert.alert("ติดต่อเรา", "support@balanceflow.com")}>
-           <View style={styles.rowLeft}>
-            <View style={[styles.iconBox, { backgroundColor: '#F0F2F5' }]}>
-               <Feather name="mail" size={20} color="#636E72" />
-            </View>
-            <Text style={styles.rowLabel}>ติดต่อทีมงาน</Text>
-          </View>
-          <Feather name="chevron-right" size={20} color="#B0B0B0" />
         </TouchableOpacity>
       </View>
 

@@ -1,0 +1,6 @@
+- [x] Testing environment (Jest, RNTL) is set up and working
+- [x] `TEST_PLAN.md` is created with detailed test cases for all features
+- [x] Unit tests for `exportService` and `notificationService` are implemented and passing
+- [x] Unit tests for `useAuth` and `useBudget` hooks are implemented and passing
+- [x] Component tests for Auth and Transaction screens are implemented and passing
+- [x] All tests pass when running `npm test`
