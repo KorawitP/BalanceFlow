@@ -44,6 +44,16 @@ export default function DrawerLayout() {
           }}
         />
         <Drawer.Screen
+          name="budget"
+          options={{
+            drawerLabel: 'งบประมาณ',
+            title: 'งบประมาณ',
+            drawerIcon: ({ color, size }) => (
+              <Feather name="dollar-sign" size={24} color={color} />
+            ),
+          }}
+        />
+        <Drawer.Screen
           name="settings"
           options={{
             drawerLabel: 'ตั้งค่า',
