@@ -5,6 +5,7 @@ import { View, ActivityIndicator, useColorScheme } from 'react-native';
 import { ThemeProvider, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { registerForNotifications } from '../services/notificationService';
 
 export default function RootLayout() {
   const { user, loading } = useAuth();
@@ -21,6 +22,11 @@ export default function RootLayout() {
       router.replace('/auth/login' as any);
     } else if (user && inAuthGroup) {
       router.replace('/(drawer)' as any);
+    }
+
+    // ขอ notification permission เมื่อ user login สำเร็จ
+    if (user) {
+      registerForNotifications();
     }
   }, [user, loading, segments]);
 

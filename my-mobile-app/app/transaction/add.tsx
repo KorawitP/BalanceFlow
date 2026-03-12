@@ -6,6 +6,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { addDoc, collection, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
+import { checkBudgetAfterExpense } from '../../services/notificationService';
 
 const EXPENSE_CATEGORIES = [
   { id: 'Food', label: 'อาหาร', icon: 'coffee' },
@@ -66,6 +67,12 @@ export default function AddTransactionScreen() {
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       });
+
+      // ตรวจสอบงบประมาณหลังบันทึกรายจ่าย
+      if (type === 'expense') {
+        await checkBudgetAfterExpense(user!.uid, selectedCategory, parseFloat(amount), date);
+      }
+
       router.back();
     } catch (error) {
       console.error(error);
