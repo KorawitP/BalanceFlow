@@ -6,6 +6,7 @@ import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/dat
 import { doc, getDoc, updateDoc, Timestamp } from 'firebase/firestore';
 import { db } from '../../firebaseConfig';
 import { useAuth } from '../../hooks/useAuth';
+import { checkBudgetAfterExpense } from '../../services/notificationService';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '../../constants/categories';
 
 export default function EditTransactionScreen() {
@@ -78,6 +79,12 @@ export default function EditTransactionScreen() {
         date: Timestamp.fromDate(date),
         updatedAt: Timestamp.now(),
       });
+
+      // ตรวจสอบงบประมาณหลังแก้ไขรายจ่าย (เหมือน add.tsx)
+      if (type === 'expense') {
+        await checkBudgetAfterExpense(user!.uid, selectedCategory, parseFloat(amount), date);
+      }
+
       router.back();
     } catch (error) {
       console.error(error);

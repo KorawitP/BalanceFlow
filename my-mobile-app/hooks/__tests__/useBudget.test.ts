@@ -38,14 +38,19 @@ describe('useBudget', () => {
     (useAuth as jest.Mock).mockReturnValue({ user: null });
     const { result } = renderHook(() => useBudget());
     expect(result.current.budgets).toEqual([]);
-    expect(result.current.loading).toBe(true); // Should remain true or handle it? Code says `if (!user) return;` in useEffect, so loading stays true.
+    // user=null → setLoading(false) is called → loading should be false
+    expect(result.current.loading).toBe(false);
   });
 
   it('should fetch budgets and calculate spent correctly', async () => {
     // 1. Mock onSnapshot for budgets
+    // ใช้เดือน/ปีปัจจุบันเพื่อให้ผ่าน filter ใน useBudget hook
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     const mockBudgets = [
-      { id: 'b1', category: 'Food', limitAmount: 1000, month: 0, year: 2023 },
-      { id: 'b2', category: 'Transport', limitAmount: 500, month: 0, year: 2023 },
+      { id: 'b1', category: 'Food', limitAmount: 1000, month: currentMonth, year: currentYear },
+      { id: 'b2', category: 'Transport', limitAmount: 500, month: currentMonth, year: currentYear },
     ];
 
     (onSnapshot as jest.Mock).mockImplementation((q, callback) => {
@@ -60,9 +65,9 @@ describe('useBudget', () => {
 
     // 2. Mock getDocs for transactions (calculateSpent)
     const mockTransactions = [
-      { category: 'Food', amount: 200 },
-      { category: 'Food', amount: 50 },
-      { category: 'Transport', amount: 100 },
+      { type: 'expense', category: 'Food', amount: 200 },
+      { type: 'expense', category: 'Food', amount: 50 },
+      { type: 'expense', category: 'Transport', amount: 100 },
     ];
 
     (getDocs as jest.Mock).mockResolvedValue({

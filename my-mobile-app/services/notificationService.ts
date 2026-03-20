@@ -8,6 +8,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { getCategoryInfo } from '../constants/categories';
 
 // =============================================
 // ตั้งค่า Notification Handler (แสดงแม้ app อยู่ foreground)
@@ -80,16 +81,6 @@ export async function sendBudgetExceeded(categoryLabel: string, percentage: numb
 // 4) ตรวจสอบงบหลังบันทึกรายจ่าย (เรียกจาก add.tsx)
 // =============================================
 
-// Map category ID → ชื่อไทย
-const CATEGORY_LABELS: Record<string, string> = {
-  Food: 'อาหาร',
-  Transport: 'เดินทาง',
-  Shopping: 'ช้อปปิ้ง',
-  Entertainment: 'บันเทิง',
-  Bills: 'บิล/ค่าน้ำไฟ',
-  Health: 'สุขภาพ',
-  Other: 'อื่นๆ',
-};
 
 export async function checkBudgetAfterExpense(
   userId: string,
@@ -137,7 +128,7 @@ export async function checkBudgetAfterExpense(
 
     // 3. คำนวณ % และส่ง notification
     const percentage = Math.round((totalSpent / limitAmount) * 100);
-    const categoryLabel = CATEGORY_LABELS[category] || category;
+    const categoryLabel = getCategoryInfo(category).label;
 
     if (percentage >= 100) {
       await sendBudgetExceeded(categoryLabel, percentage);
